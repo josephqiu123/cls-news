@@ -74,10 +74,6 @@ class CLSSpider:
         dir_path = os.path.join(os.getcwd(), date_str)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-            # 跨天重置
-            self.news_data = []
-            self.seen_ids = set()
-            print(f"[{now}] 进入新的一天，重置数据缓存")
 
         file_name = f"{hour_str}.json"
         file_path = os.path.join(dir_path, file_name)
@@ -101,10 +97,25 @@ class CLSSpider:
             print(f"[{datetime.now()}] 初始抓取完成，加载了 {len(initial_news)} 条新闻")
         
         last_save_hour = datetime.now().hour
+        last_date = datetime.now().strftime('%Y-%m-%d')
         
         while True:
             try:
                 now = datetime.now()
+                current_date = now.strftime('%Y-%m-%d')
+                
+                # 检测跨天，重置当天数据
+                if current_date != last_date:
+                    self.news_data = []
+                    self.seen_ids = set()
+                    last_date = current_date
+                    print(f"[{now}] 进入新的一天，重置数据缓存，准备重新抓取...")
+                    
+                    # 跨天时重新抓取初始数据
+                    initial_news = self.fetch_latest_news()
+                    if initial_news:
+                        self.news_data.extend(initial_news)
+                        print(f"[{now}] 新一天初始抓取完成，加载了 {len(initial_news)} 条新闻")
                 
                 # 1. 每分钟请求一次
                 new_news = self.fetch_latest_news()
